@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Raw Audio Streaming</title>
+</head>
+<body>
+    <button id="start">Start Streaming</button>
+    <script>
+        const ws = new WebSocket('wss://localhost:8765');
+        ws.binaryType = 'arraybuffer'; // Set the binary type to arraybuffer
+
+        // Create an AudioContext to play the received audio data
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let audioBufferSource;
+
+        ws.onmessage = (event) => {
+            // Create a buffer source for the received raw PCM data
+            const rawAudioData = new Float32Array(event.data);
+            playAudio(rawAudioData);
+        };
+
+        document.getElementById('start').onclick = async () => {
+            console.log(navigator.mediaDevices);
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+            const mediaStreamSource = audioContext.createMediaStreamSource(stream);
+            mediaStreamSource.connect(processor);
+            processor.connect(audioContext.destination);
+
+            processor.onaudioprocess = (event) => {
+                const inputBuffer = event.inputBuffer.getChannelData(0);
+                const rawAudioData = new Float32Array(inputBuffer.length);
+                for (let i = 0; i < inputBuffer.length; i++) {
+                    rawAudioData[i] = inputBuffer[i];
+                }
+
+                // Send raw PCM data as Float32Array
+                if(!ws){
+                    ws = new WebSocket('wss://localhost:8765');
+                }
+                ws.send(rawAudioData.buffer);
+            };
+        };
+
+        function playAudio(rawAudioData) {
+            // Create a new buffer source for each message
+            const buffer = audioContext.createBuffer(1, rawAudioData.length, audioContext.sampleRate);
+            buffer.copyToChannel(rawAudioData, 0);
+
+            audioBufferSource = audioContext.createBufferSource();
+            audioBufferSource.buffer = buffer;
+            audioBufferSource.connect(audioContext.destination);
+            audioBufferSource.start(0);
+        }
+    </script>
+</body>
+</html>
