@@ -40,10 +40,10 @@ async def main():
         ssl_context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
 
         # Start the server with SSL
-        async with serve(echo, "0.0.0.0", 8765, ssl=ssl_context) as server:
+        async with serve(echo, "0.0.0.0", 8765, max_size=None, ssl=ssl_context) as server:
             await server.wait_closed()
     else:
-        async with serve(echo, "0.0.0.0", 8765) as server:
+        async with serve(echo, "0.0.0.0", 8765, max_size=None) as server:
             await server.wait_closed()
 
 if __name__ == "__main__":

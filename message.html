@@ -81,8 +81,8 @@
        const socket = new WebSocket(serverUrl);
 
 
-       // Maximum file size in bytes (e.g., 2 MB)
-       const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+       // Maximum file size in bytes (e.g., 31 MB)
+       const MAX_FILE_SIZE = 31 * 1024 * 1024; // 31 MB
 
        socket.addEventListener('open', () => {
            console.log('Connected to the WebSocket server');
@@ -114,7 +114,7 @@
            const file = event.target.files[0];
            if (file) {
                if (file.size > MAX_FILE_SIZE) {
-                   alert('Error: File size exceeds 2 MB. Please select a smaller image.');
+                   alert('Error: File size exceeds 31 MB. Please select a smaller image.');
                    return;
                }
                const reader = new FileReader();
