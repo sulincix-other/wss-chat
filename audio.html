@@ -8,6 +8,21 @@
 <body>
     <button id="start">Start Streaming</button>
     <script>
+        // Apple garbage blocker
+        function isApple() {
+            return /iPhone/i.test(navigator.userAgent) 
+                || /Macintosh/i.test(navigator.userAgent) 
+                || /Mac OS X/i.test(navigator.userAgent) 
+                || /iPad/i.test(navigator.userAgent);
+        }
+
+        if(isApple()){
+            document.body.innerHTML = "<h1>Apple Devices Are Not Allowed!</h1>"
+            document.body.innerHTML += "<p>Get a real device: use Android or GNU/Linux!</p>";
+            throw new Error("Apple Detected!");
+        }
+    </script>
+    <script>
         const server = 'wss://localhost:8765';
         const ws = new WebSocket(server+window.location.pathname);
         ws.binaryType = 'arraybuffer'; // Set the binary type to arraybuffer
