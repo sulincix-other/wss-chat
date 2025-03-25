@@ -119,39 +119,19 @@
                }
                const reader = new FileReader();
                reader.onload = (e) => {
-                   const imageData = e.target.result;
+                   const imageData = e.target.result; // This is the original image data
 
-                   // Create an image element to scale it down
-                   const img = new Image();
-                   img.onload = () => {
-                       // Set the desired width and maintain aspect ratio
-                       const targetWidth = 800; // Fixed width
-                       const scaleFactor = targetWidth / img.width; // Calculate scale factor
-                       const scaledHeight = img.height * scaleFactor; // Maintain aspect ratio
-
-                       const canvas = document.getElementById('canvas');
-                       const ctx = canvas.getContext('2d');
-
-                       // Set canvas size to the scaled dimensions
-                       canvas.width = targetWidth;
-                       canvas.height = scaledHeight;
-
-                       // Draw the scaled image on the canvas
-                       ctx.drawImage(img, 0, 0, targetWidth, scaledHeight);
-
-                       // Convert the canvas to a data URL and send it via WebSocket
-                       const scaledImageData = canvas.toDataURL();
-                       const messageData = {
-                           clientId: `${clientId}`,
-                           message: scaledImageData
-                       };
-                       socket.send(JSON.stringify(messageData));
-
-                       // Optionally display the sent image
-                       displaySentImage(scaledImageData);
+                   // Prepare the message data to send via WebSocket
+                   const messageData = {
+                       clientId: `${clientId}`,
+                       message: imageData
                    };
-
-                   img.src = imageData; // Set the image source to the loaded data URL
+                   
+                   // Send the message data via WebSocket
+                   socket.send(JSON.stringify(messageData));
+               
+                   // Optionally display the sent image
+                   displaySentImage(imageData);
                };
                reader.readAsDataURL(file); // Read file as data URL
            }
