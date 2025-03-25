@@ -16,23 +16,23 @@
         #messages {
             border: 1px solid #ccc;
             border-radius: 5px;
-            flex: 1; /* Allow the messages div to grow and fill available space */
-            overflow-y: scroll;
+            flex: 1;
+            overflow-y: auto;
             padding: 10px;
             background: white;
-            margin: 20px 20px; /* Add some margin for aesthetics */
+            margin: 20px;
         }
         #inputContainer {
             display: flex;
-            margin: 10px; /* Add margin for aesthetics */
+            margin: 10px;
         }
         #messageInput {
-            flex: 1; /* Allow the input to grow */
+            flex: 1;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        #sendButton {
+        #sendButton, #imageButton {
             padding: 10px;
             border: none;
             border-radius: 5px;
@@ -40,9 +40,9 @@
             color: white;
             cursor: pointer;
             min-width: 100px;
-            margin-left: 10px; /* Space between input and button */
+            margin-left: 10px;
         }
-        #sendButton:hover {
+        #sendButton:hover, #imageButton:hover {
             background-color: #218838;
         }
         .message {
@@ -54,73 +54,141 @@
         .received {
             color: green;
         }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
     </style>
 </head>
 <body>
     <div id="messages"></div>
     <div id="inputContainer">
         <input id="messageInput" type="text" placeholder="Type your message here..." />
+        <input id="imageInput" type="file" accept="image/*" style="display: none;" />
+        <button id="imageButton">Send Image</button>
+        <canvas id="canvas"style="display: none;" ></canvas>
         <button id="sendButton">Send</button>
     </div>
     <script>
-        // Apple garbage blocker
-        function isApple() {
-            return /iPhone/i.test(navigator.userAgent)
-                || /Macintosh/i.test(navigator.userAgent)
-                || /Mac OS X/i.test(navigator.userAgent)
-                || /iPad/i.test(navigator.userAgent);
-        }
-
-        if(isApple()){
-            document.body.innerHTML = "<h1>Apple Devices Are Not Allowed!</h1>"
-            document.body.innerHTML += "<p>Get a real device: use Android or GNU/Linux!</p>";
-            throw new Error("Apple Detected!");
-        }
-    </script>
-    <script>
-        const server = 'wss://localhost:8765';
+       const serverUrl = 'ws://localhost:8765'; // Change to your server address
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
+        const imageInput = document.getElementById('imageInput');
+        const imageButton = document.getElementById('imageButton');
 
-        // Generate a unique client ID (for demonstration purposes)
-        const clientId = 'client-' + Math.random().toString(36).substr(2, 9);
+        const socket = new WebSocket(serverUrl);
 
-        // Connect to a public WebSocket echo server
-        const socket = new WebSocket(server+window.location.pathname);
 
-        // Listen for messages from the server
-        socket.addEventListener('message', function(event) {
-            const data = JSON.parse(event.data);
-            const message = document.createElement('div');
-            message.className = 'message received';
-            message.textContent = `${data.clientId}: ${data.message}`;
-            messagesDiv.appendChild(message);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        // Maximum file size in bytes (e.g., 2 MB)
+        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+
+        socket.addEventListener('open', () => {
+            console.log('Connected to the WebSocket server');
         });
 
-        // Send message when button is clicked
-        sendButton.addEventListener('click', function() {
-            const messageText = messageInput.value;
+        socket.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+            displayMessage(data);
+        });
+
+        sendButton.addEventListener('click', () => {
+            const messageText = messageInput.value.trim();
             if (messageText) {
-                const messageData = { clientId: clientId, message: messageText };
+                const messageData = { clientId: 'client', message: messageText };
                 socket.send(JSON.stringify(messageData));
-                
-                const sentMessage = document.createElement('div');
-                sentMessage.className = 'message sent';
-                sentMessage.textContent = `Sent: ${messageText}`;
-                messagesDiv.appendChild(sentMessage);
-                messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+                displaySentMessage(messageText);
                 messageInput.value = ''; // Clear input
             }
         });
 
+        imageButton.addEventListener('click', () => {
+            imageInput.click(); // Trigger file input
+        });
+
+        document.getElementById('imageInput').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            if (file.size > MAX_FILE_SIZE) {
+                alert('Error: File size exceeds 2 MB. Please select a smaller image.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imageData = e.target.result;
+
+                // Create an image element to scale it down
+				    const img = new Image();
+				    img.onload = () => {
+				        // Set the desired width and maintain aspect ratio
+				        const targetWidth = 800; // Fixed width
+				        const scaleFactor = targetWidth / img.width; // Calculate scale factor
+				        const scaledHeight = img.height * scaleFactor; // Maintain aspect ratio
+
+				        const canvas = document.getElementById('canvas');
+				        const ctx = canvas.getContext('2d');
+
+				        // Set canvas size to the scaled dimensions
+				        canvas.width = targetWidth;
+				        canvas.height = scaledHeight;
+
+				        // Draw the scaled image on the canvas
+				        ctx.drawImage(img, 0, 0, targetWidth, scaledHeight);
+
+				        // Convert the canvas to a data URL and send it via WebSocket
+				        const scaledImageData = canvas.toDataURL();
+				        const messageData = { clientId: 'client', message: scaledImageData };
+				        socket.send(JSON.stringify(messageData));
+
+				        // Optionally display the sent image
+				        displaySentImage(scaledImageData);
+				    };
+
+				    img.src = imageData; // Set the image source to the loaded data URL
+				};
+				reader.readAsDataURL(file); // Read file as data URL
+			}
+		});
+
+        function displayMessage(data) {
+            const message = document.createElement('div');
+            message.className = 'message received';
+            if (data.message.startsWith('data:image/')) {
+                const img = document.createElement('img');
+                img.src = data.message;
+                message.appendChild(img);
+            } else {
+                message.textContent = `${data.clientId}: ${data.message}`;
+            }
+            messagesDiv.appendChild(message);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        }
+
+        function displaySentMessage(messageText) {
+            const sentMessage = document.createElement('div');
+            sentMessage.className = 'message sent';
+            sentMessage.textContent = `Sent: ${messageText}`;
+            messagesDiv.appendChild(sentMessage);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        }
+
+        function displaySentImage(imageData) {
+            const sentMessage = document.createElement('div');
+            sentMessage.className = 'message sent';
+            const img = document.createElement('img');
+            img.src = imageData;
+            sentMessage.appendChild(img);
+            messagesDiv.appendChild(sentMessage);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        }
+
         // Optional: Send message when Enter key is pressed
-        messageInput.addEventListener('keypress', function(event) {
+        messageInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
                 sendButton.click();
             }
-        });
-    </script>
+        });    </script>
 </body>
 </html>
+
+
