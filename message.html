@@ -71,124 +71,131 @@
     </div>
     <script>
        const serverUrl = 'ws://localhost:8765'; // Change to your server address
-        const messagesDiv = document.getElementById('messages');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
-        const imageInput = document.getElementById('imageInput');
-        const imageButton = document.getElementById('imageButton');
-        const clientId = 'client-' + Math.random().toString(36).substr(2, 9);
+       const messagesDiv = document.getElementById('messages');
+       const messageInput = document.getElementById('messageInput');
+       const sendButton = document.getElementById('sendButton');
+       const imageInput = document.getElementById('imageInput');
+       const imageButton = document.getElementById('imageButton');
+       const clientId = 'client-' + Math.random().toString(36).substr(2, 9);
 
-        const socket = new WebSocket(serverUrl);
+       const socket = new WebSocket(serverUrl);
 
 
-        // Maximum file size in bytes (e.g., 2 MB)
-        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+       // Maximum file size in bytes (e.g., 2 MB)
+       const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 
-        socket.addEventListener('open', () => {
-            console.log('Connected to the WebSocket server');
-        });
+       socket.addEventListener('open', () => {
+           console.log('Connected to the WebSocket server');
+       });
 
-        socket.addEventListener('message', (event) => {
-            const data = JSON.parse(event.data);
-            displayMessage(data);
-        });
+       socket.addEventListener('message', (event) => {
+           const data = JSON.parse(event.data);
+           displayMessage(data);
+       });
 
-        sendButton.addEventListener('click', () => {
-            const messageText = messageInput.value.trim();
-            if (messageText) {
-                const messageData = { clientId: `${clientId}`, message: messageText };
-                socket.send(JSON.stringify(messageData));
-                displaySentMessage(messageText);
-                messageInput.value = ''; // Clear input
-            }
-        });
+       sendButton.addEventListener('click', () => {
+           const messageText = messageInput.value.trim();
+           if (messageText) {
+               const messageData = {
+                   clientId: `${clientId}`,
+                   message: messageText
+               };
+               socket.send(JSON.stringify(messageData));
+               displaySentMessage(messageText);
+               messageInput.value = ''; // Clear input
+           }
+       });
 
-        imageButton.addEventListener('click', () => {
-            imageInput.click(); // Trigger file input
-        });
+       imageButton.addEventListener('click', () => {
+           imageInput.click(); // Trigger file input
+       });
 
-        document.getElementById('imageInput').addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            if (file.size > MAX_FILE_SIZE) {
-                alert('Error: File size exceeds 2 MB. Please select a smaller image.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const imageData = e.target.result;
+       document.getElementById('imageInput').addEventListener('change', (event) => {
+           const file = event.target.files[0];
+           if (file) {
+               if (file.size > MAX_FILE_SIZE) {
+                   alert('Error: File size exceeds 2 MB. Please select a smaller image.');
+                   return;
+               }
+               const reader = new FileReader();
+               reader.onload = (e) => {
+                   const imageData = e.target.result;
 
-                // Create an image element to scale it down
-				    const img = new Image();
-				    img.onload = () => {
-				        // Set the desired width and maintain aspect ratio
-				        const targetWidth = 800; // Fixed width
-				        const scaleFactor = targetWidth / img.width; // Calculate scale factor
-				        const scaledHeight = img.height * scaleFactor; // Maintain aspect ratio
+                   // Create an image element to scale it down
+                   const img = new Image();
+                   img.onload = () => {
+                       // Set the desired width and maintain aspect ratio
+                       const targetWidth = 800; // Fixed width
+                       const scaleFactor = targetWidth / img.width; // Calculate scale factor
+                       const scaledHeight = img.height * scaleFactor; // Maintain aspect ratio
 
-				        const canvas = document.getElementById('canvas');
-				        const ctx = canvas.getContext('2d');
+                       const canvas = document.getElementById('canvas');
+                       const ctx = canvas.getContext('2d');
 
-				        // Set canvas size to the scaled dimensions
-				        canvas.width = targetWidth;
-				        canvas.height = scaledHeight;
+                       // Set canvas size to the scaled dimensions
+                       canvas.width = targetWidth;
+                       canvas.height = scaledHeight;
 
-				        // Draw the scaled image on the canvas
-				        ctx.drawImage(img, 0, 0, targetWidth, scaledHeight);
+                       // Draw the scaled image on the canvas
+                       ctx.drawImage(img, 0, 0, targetWidth, scaledHeight);
 
-				        // Convert the canvas to a data URL and send it via WebSocket
-				        const scaledImageData = canvas.toDataURL();
-				        const messageData = { clientId: `${clientId}`, message: scaledImageData };
-				        socket.send(JSON.stringify(messageData));
+                       // Convert the canvas to a data URL and send it via WebSocket
+                       const scaledImageData = canvas.toDataURL();
+                       const messageData = {
+                           clientId: `${clientId}`,
+                           message: scaledImageData
+                       };
+                       socket.send(JSON.stringify(messageData));
 
-				        // Optionally display the sent image
-				        displaySentImage(scaledImageData);
-				    };
+                       // Optionally display the sent image
+                       displaySentImage(scaledImageData);
+                   };
 
-				    img.src = imageData; // Set the image source to the loaded data URL
-				};
-				reader.readAsDataURL(file); // Read file as data URL
-			}
-		});
+                   img.src = imageData; // Set the image source to the loaded data URL
+               };
+               reader.readAsDataURL(file); // Read file as data URL
+           }
+       });
 
-        function displayMessage(data) {
-            const message = document.createElement('div');
-            message.className = 'message received';
-            if (data.message.startsWith('data:image/')) {
-                const img = document.createElement('img');
-                img.src = data.message;
-                message.appendChild(img);
-            } else {
-                message.textContent = `${data.clientId}: ${data.message}`;
-            }
-            messagesDiv.appendChild(message);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
-        }
+       function displayMessage(data) {
+           const message = document.createElement('div');
+           message.className = 'message received';
+           if (data.message.startsWith('data:image/')) {
+               const img = document.createElement('img');
+               img.src = data.message;
+               message.appendChild(img);
+           } else {
+               message.textContent = `${data.clientId}: ${data.message}`;
+           }
+           messagesDiv.appendChild(message);
+           messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+       }
 
-        function displaySentMessage(messageText) {
-            const sentMessage = document.createElement('div');
-            sentMessage.className = 'message sent';
-            sentMessage.textContent = `Sent: ${messageText}`;
-            messagesDiv.appendChild(sentMessage);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
-        }
+       function displaySentMessage(messageText) {
+           const sentMessage = document.createElement('div');
+           sentMessage.className = 'message sent';
+           sentMessage.textContent = `Sent: ${messageText}`;
+           messagesDiv.appendChild(sentMessage);
+           messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+       }
 
-        function displaySentImage(imageData) {
-            const sentMessage = document.createElement('div');
-            sentMessage.className = 'message sent';
-            const img = document.createElement('img');
-            img.src = imageData;
-            sentMessage.appendChild(img);
-            messagesDiv.appendChild(sentMessage);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
-        }
+       function displaySentImage(imageData) {
+           const sentMessage = document.createElement('div');
+           sentMessage.className = 'message sent';
+           const img = document.createElement('img');
+           img.src = imageData;
+           sentMessage.appendChild(img);
+           messagesDiv.appendChild(sentMessage);
+           messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+       }
 
-        // Optional: Send message when Enter key is pressed
-        messageInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                sendButton.click();
-            }
-        });    </script>
+       // Optional: Send message when Enter key is pressed
+       messageInput.addEventListener('keypress', (event) => {
+           if (event.key === 'Enter') {
+               sendButton.click();
+           }
+       });
+    </script>
 </body>
 </html>
 
