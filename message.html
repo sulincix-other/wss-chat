@@ -76,6 +76,7 @@
         const sendButton = document.getElementById('sendButton');
         const imageInput = document.getElementById('imageInput');
         const imageButton = document.getElementById('imageButton');
+        const clientId = 'client-' + Math.random().toString(36).substr(2, 9);
 
         const socket = new WebSocket(serverUrl);
 
@@ -95,7 +96,7 @@
         sendButton.addEventListener('click', () => {
             const messageText = messageInput.value.trim();
             if (messageText) {
-                const messageData = { clientId: 'client', message: messageText };
+                const messageData = { clientId: `${clientId}`, message: messageText };
                 socket.send(JSON.stringify(messageData));
                 displaySentMessage(messageText);
                 messageInput.value = ''; // Clear input
@@ -137,7 +138,7 @@
 
 				        // Convert the canvas to a data URL and send it via WebSocket
 				        const scaledImageData = canvas.toDataURL();
-				        const messageData = { clientId: 'client', message: scaledImageData };
+				        const messageData = { clientId: `${clientId}`, message: scaledImageData };
 				        socket.send(JSON.stringify(messageData));
 
 				        // Optionally display the sent image
