@@ -8,6 +8,9 @@ import uuid
 import ssl
 from websockets import serve
 
+from server import run
+import threading
+
 connected_clients = {}
 
 async def echo(websocket):
@@ -44,4 +47,5 @@ async def main():
             await server.wait_closed()
 
 if __name__ == "__main__":
+    threading.Thread(target=run).start()
     asyncio.run(main())

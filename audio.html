@@ -8,7 +8,8 @@
 <body>
     <button id="start">Start Streaming</button>
     <script>
-        const ws = new WebSocket('wss://localhost:8765');
+        const server = 'wss://localhost:8765';
+        const ws = new WebSocket(server+window.location.pathname);
         ws.binaryType = 'arraybuffer'; // Set the binary type to arraybuffer
 
         // Create an AudioContext to play the received audio data
@@ -40,7 +41,7 @@
 
                 // Send raw PCM data as Float32Array
                 if(!ws){
-                    ws = new WebSocket('wss://localhost:8765');
+                    ws = new WebSocket(server+window.location.pathname);
                 }
                 ws.send(rawAudioData.buffer);
             };

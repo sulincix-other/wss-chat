@@ -32,5 +32,7 @@ if os.path.isfile("cert.pem") and os.path.isfile("key.pem"):
     # Wrap the server socket with SSL
     httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
 
-print("Serving on https://0.0.0.0:4443")
-httpd.serve_forever()
+
+def run():
+    print("Serving on 0.0.0.0:4443")
+    httpd.serve_forever()

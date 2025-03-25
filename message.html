@@ -64,6 +64,7 @@
     </div>
 
     <script>
+        const server = 'wss://localhost:8765';
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
@@ -72,7 +73,7 @@
         const clientId = 'client-' + Math.random().toString(36).substr(2, 9);
 
         // Connect to a public WebSocket echo server
-        const socket = new WebSocket('wss://localhost:8765');
+        const socket = new WebSocket(server+window.location.pathname);
 
         // Listen for messages from the server
         socket.addEventListener('message', function(event) {
