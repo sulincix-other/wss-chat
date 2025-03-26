@@ -4,9 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket Raw Audio Streaming</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #counts {
+            margin-top: 20px;
+            text-align: center;
+        }
+        p {
+            margin: 5px 0;
+        }
+        span {
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
+    <h1>WebSocket Raw Audio Streaming</h1>
     <button id="start">Start Streaming</button>
+    <button id="mute">Mute</button>
+    <div id="counts">
+        <p>Outgoing Audio Count: <span id="outgoingCount">0</span></p>
+        <p>Incoming Audio Count: <span id="incomingCount">0</span></p>
+    </div>
     <script>
         // Apple garbage blocker
         function isApple() {
@@ -23,24 +68,44 @@
         }
     </script>
     <script>
-        const server = 'wss://localhost:8765';
+        const server = 'ws://localhost:8765';
         const ws = new WebSocket(server+window.location.pathname);
         ws.binaryType = 'arraybuffer'; // Set the binary type to arraybuffer
 
         // Create an AudioContext to play the received audio data
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
         let audioBufferSource;
+        
+        let isMuted = false; // Mute state
+        let isStream = false; // Mute state
+
+        // Counters for incoming and outgoing audio data
+        let outgoingCount = 0;
+        let incomingCount = 0;
+        
+        const outgoingCountDisplay = document.getElementById('outgoingCount');
+        const incomingCountDisplay = document.getElementById('incomingCount');
 
         ws.onmessage = (event) => {
+            if (isMuted) return; // Don't play audio if muted
             // Create a buffer source for the received raw PCM data
             const rawAudioData = new Float32Array(event.data);
+            incomingCount++; // Increment incoming count
+            incomingCountDisplay.innerText = incomingCount; // Update display
             playAudio(rawAudioData);
         };
 
         document.getElementById('start').onclick = async () => {
+            isStream = !isStream;
+            document.getElementById('start').innerText = isStream ? 'Stop Streaming' : 'Start Streaming'; // Update button text
+            if(!isStream){
+                ws.close();
+                audioContext.close();
+                return;
+            }
             console.log(navigator.mediaDevices);
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const processor = audioContext.createScriptProcessor(4096, 1, 1);
 
             const mediaStreamSource = audioContext.createMediaStreamSource(stream);
@@ -58,6 +123,8 @@
                 if(!ws){
                     ws = new WebSocket(server+window.location.pathname);
                 }
+                outgoingCount++; // Increment outgoing count
+                outgoingCountDisplay.innerText = outgoingCount; // Update display
                 ws.send(rawAudioData.buffer);
             };
         };
@@ -72,6 +139,11 @@
             audioBufferSource.connect(audioContext.destination);
             audioBufferSource.start(0);
         }
+        // Mute button functionality
+        document.getElementById('mute').onclick = () => {
+            isMuted = !isMuted; // Toggle mute state
+            document.getElementById('mute').innerText = isMuted ? 'Unmute' : 'Mute'; // Update button text
+        };
     </script>
 </body>
 </html>
