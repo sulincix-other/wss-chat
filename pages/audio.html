@@ -68,8 +68,20 @@
         }
     </script>
     <script>
-        const server = 'ws://localhost:8765';
-        const ws = new WebSocket(server+window.location.pathname);
+        var pro = "ws://";
+        if (document.location.protocol == "https:"){
+            pro = "wss://"
+        }
+
+       var room = "/main";
+       if(window.location.pathname.length > 1){
+           room = window.location.pathname;
+       }
+
+        room.replace("/","-");
+
+        const serverUrl = pro+document.location.host+"/ws"
+        const ws = new WebSocket(serverUrl+room);
         ws.binaryType = 'arraybuffer'; // Set the binary type to arraybuffer
 
         // Create an AudioContext to play the received audio data

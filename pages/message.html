@@ -70,7 +70,26 @@
         <button id="sendButton">Send</button>
     </div>
     <script>
-       const serverUrl = 'ws://localhost:8765'; // Change to your server address
+        // Apple garbage blocker
+        function isApple() {
+            return /iPhone/i.test(navigator.userAgent) 
+                || /Macintosh/i.test(navigator.userAgent) 
+                || /Mac OS X/i.test(navigator.userAgent) 
+                || /iPad/i.test(navigator.userAgent);
+        }
+
+        if(isApple()){
+            document.body.innerHTML = "<h1>Apple Devices Are Not Allowed!</h1>"
+            document.body.innerHTML += "<p>Get a real device: use Android or GNU/Linux!</p>";
+            throw new Error("Apple Detected!");
+        }
+    </script>
+    <script>
+       var pro = "ws://";
+       if (document.location.protocol == "https:"){
+           pro = "wss://"
+       }
+       const serverUrl = pro+document.location.host+"/ws"
        const messagesDiv = document.getElementById('messages');
        const messageInput = document.getElementById('messageInput');
        const sendButton = document.getElementById('sendButton');
@@ -78,8 +97,14 @@
        const imageButton = document.getElementById('imageButton');
        const clientId = 'client-' + Math.random().toString(36).substr(2, 9);
 
-       const socket = new WebSocket(serverUrl);
+       var room = "/main";
+       if(window.location.pathname.length > 1){
+           room = window.location.pathname;
+       }
 
+       room.replace("/", "-");
+
+       const socket = new WebSocket(serverUrl+room);
 
        // Maximum file size in bytes (e.g., 31 MB)
        const MAX_FILE_SIZE = 31 * 1024 * 1024; // 31 MB
