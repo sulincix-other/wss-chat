@@ -46,6 +46,7 @@
 </head>
 <body>
     <h1>WebSocket Raw Audio Streaming</h1>
+    <p>Connection: <span id="status">offline</span></p>
     <button id="start">Start Streaming</button>
     <button id="mute">Unmute</button>
     <div id="counts">
@@ -98,6 +99,14 @@
         const outgoingCountDisplay = document.getElementById('outgoingCount');
         const incomingCountDisplay = document.getElementById('incomingCount');
 
+        ws.onopen = (event) => {
+            document.getElementById("status").innerText = "online";
+        }
+
+        ws.onclose = (event) => {
+            document.getElementById("status").innerText = "offline";
+        }
+
         ws.onmessage = (event) => {
             if (isMuted) return; // Don't play audio if muted
             // Create a buffer source for the received raw PCM data
@@ -114,8 +123,6 @@
             isStream = !isStream;
             document.getElementById('start').innerText = isStream ? 'Stop Streaming' : 'Start Streaming'; // Update button text
             if(!isStream){
-                ws.close();
-                audioContext.close();
                 return;
             }
             console.log(navigator.mediaDevices);
@@ -128,6 +135,9 @@
             processor.connect(audioContext.destination);
 
             processor.onaudioprocess = (event) => {
+                if(!isStream){
+                    return;
+                }
                 const inputBuffer = event.inputBuffer.getChannelData(0);
                 const rawAudioData = new Float32Array(inputBuffer.length);
                 for (let i = 0; i < inputBuffer.length; i++) {
