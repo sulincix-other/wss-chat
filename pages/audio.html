@@ -117,6 +117,9 @@
         };
 
         document.getElementById('start').onclick = async () => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                ws = new WebSocket(serverUrl + room);
+            }
             if(audioContext == null){
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
@@ -150,9 +153,23 @@
                 }
                 outgoingCount++; // Increment outgoing count
                 outgoingCountDisplay.innerText = outgoingCount; // Update display
-                ws.send(rawAudioData.buffer);
+                const resampledData = resampleAudioData(rawAudioData, audioContext.sampleRate, 16000);
+                ws.send(resampledData.buffer);
             };
         };
+
+	// Resample raw PCM data
+	    function resampleAudioData(inputData, inputSampleRate, targetSampleRate) {
+	        const newLength = Math.floor(inputData.length * targetSampleRate / inputSampleRate);
+	        const outputData = new Float32Array(newLength);
+
+	        for (let i = 0; i < newLength; i++) {
+	            const originalIndex = Math.floor(i * inputSampleRate / targetSampleRate);
+	            outputData[i] = inputData[originalIndex];
+	        }
+
+	        return outputData;
+	    }
 
         function playAudio(rawAudioData) {
             if(audioContext == null){
