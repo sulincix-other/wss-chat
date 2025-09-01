@@ -47,11 +47,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            data = await websocket.receive_text()
-            print(f"MESSAGE: {path}: {websocket.id} - {data}")
+            data = await websocket.receive_bytes()
+            #print(f"MESSAGE: {path}: {websocket.id} - {data}")
             for client in connected_clients[path]:
                 if client.id != websocket.id:
-                    await client.send_text(data)
+                    await client.send_bytes(data)
     except Exception as e:
         print(f"Error: {e}")
     finally:

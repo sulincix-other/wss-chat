@@ -47,7 +47,7 @@
 <body>
     <h1>WebSocket Raw Audio Streaming</h1>
     <button id="start">Start Streaming</button>
-    <button id="mute">Mute</button>
+    <button id="mute">Unmute</button>
     <div id="counts">
         <p>Outgoing Audio Count: <span id="outgoingCount">0</span></p>
         <p>Incoming Audio Count: <span id="incomingCount">0</span></p>
@@ -85,10 +85,10 @@
         ws.binaryType = 'arraybuffer'; // Set the binary type to arraybuffer
 
         // Create an AudioContext to play the received audio data
-        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        var audioContext = null;
         let audioBufferSource;
         
-        let isMuted = false; // Mute state
+        let isMuted = true; // Mute state
         let isStream = false; // Mute state
 
         // Counters for incoming and outgoing audio data
@@ -108,6 +108,9 @@
         };
 
         document.getElementById('start').onclick = async () => {
+            if(audioContext == null){
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
             isStream = !isStream;
             document.getElementById('start').innerText = isStream ? 'Stop Streaming' : 'Start Streaming'; // Update button text
             if(!isStream){
@@ -142,6 +145,9 @@
         };
 
         function playAudio(rawAudioData) {
+            if(audioContext == null){
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
             // Create a new buffer source for each message
             const buffer = audioContext.createBuffer(1, rawAudioData.length, audioContext.sampleRate);
             buffer.copyToChannel(rawAudioData, 0);
