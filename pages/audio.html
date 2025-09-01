@@ -153,8 +153,9 @@
                 }
                 outgoingCount++; // Increment outgoing count
                 outgoingCountDisplay.innerText = outgoingCount; // Update display
-                const resampledData = resampleAudioData(rawAudioData, audioContext.sampleRate, 16000);
-                ws.send(resampledData.buffer);
+                //const resampledData = resampleAudioData(rawAudioData, audioContext.sampleRate, 16000);
+                //ws.send(resampledData.buffer);
+                ws.send(rawAudioData.buffer);
             };
         };
 
