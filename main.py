@@ -1,5 +1,7 @@
 import uuid
 
+import traceback
+
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
 
@@ -47,19 +49,26 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            data = await websocket.receive_bytes()
-            #print(f"MESSAGE: {path}: {websocket.id} - {data}")
+            isb = False # is bytes
+            try:
+                data = await websocket.receive_bytes()
+                isb = True
+            except:
+                data = await websocket.receive_text()
+            print(f"MESSAGE: {path}: {websocket.id} - {data}")
             for client in connected_clients[path]:
                 if client.id != websocket.id:
-                    await client.send_bytes(data)
+                    if isb:
+                        await client.send_bytes(data)
+                    else:
+                        await client.send_text(data)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", traceback.format_exc())
     finally:
         print(f"DISCONNECT: {path}: {websocket.id}")
         connected_clients[path].remove(websocket)
         if not connected_clients[path]:
             del connected_clients[path]
-
 
 def main():
     import uvicorn
